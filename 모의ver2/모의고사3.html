@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang='ko'>
+<head>
+<meta charset='utf-8'>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>모의고사 3 - 탐색적 데이터 분석</title>
+<style>
+:root {
+  --accent: #2c4a78;
+  --correct: #1b8a5a;
+  --incorrect: #d6455d;
+  --card-bg: #ffffff;
+  --card-shadow: 0 4px 18px rgba(18, 42, 88, 0.12);
+  --card-shadow-strong: 0 6px 22px rgba(18, 42, 88, 0.18);
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+body {
+  font-family: "Segoe UI", "Nanum Gothic", "Apple SD Gothic Neo", sans-serif;
+  margin: 0 auto;
+  max-width: 960px;
+  padding: 28px 18px 80px;
+  background: #f5f7fb;
+  color: #1f2d3d;
+  line-height: 1.65;
+}
+header {
+  text-align: center;
+  margin-bottom: 32px;
+  padding: 0 12px;
+}
+h1 {
+  margin: 0 0 8px;
+  font-size: clamp(1.6rem, 2.6vw + 1rem, 2.25rem);
+  color: #1a2945;
+}
+.info {
+  font-size: 0.95rem;
+  color: #4f5d78;
+  margin-bottom: 4px;
+}
+.question-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.question {
+  background: var(--card-bg);
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: var(--card-shadow);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.question.is-correct {
+  box-shadow: 0 10px 26px rgba(27, 138, 90, 0.22);
+}
+.question.is-incorrect {
+  box-shadow: 0 10px 26px rgba(214, 69, 93, 0.18);
+}
+.q-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: baseline;
+  margin-bottom: 14px;
+}
+.q-number {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--accent);
+}
+.q-tags {
+  font-size: 0.9rem;
+  color: #5d6f92;
+}
+.prompt {
+  margin-bottom: 16px;
+  word-break: keep-all;
+  white-space: pre-line;
+}
+.options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.options li {
+  background: #f7f9fc;
+  border-radius: 12px;
+  padding: 10px 12px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.options li:hover {
+  background: #eef3fb;
+  transform: translateY(-1px);
+}
+.options label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #1f2d3d;
+}
+.options input[type="radio"] {
+  accent-color: var(--accent);
+  transform: scale(1.1);
+}
+textarea.answer-area {
+  margin-top: 12px;
+  border: 1px solid #c5d1e3;
+  border-radius: 14px;
+  background: #ffffff;
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  color: #1f2d3d;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-height: 72px;
+  font-family: inherit;
+  resize: vertical;
+}
+textarea.answer-area.short {
+  min-height: 64px;
+}
+textarea.answer-area.descriptive {
+  min-height: 170px;
+}
+textarea.answer-area:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(44, 74, 120, 0.16);
+  outline: none;
+}
+.action-row {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.action-button {
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(44, 74, 120, 0.26);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.2s ease;
+}
+.action-button.secondary {
+  background: #62759c;
+}
+.action-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(44, 74, 120, 0.3);
+}
+.action-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(44, 74, 120, 0.22);
+}
+.feedback {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: rgba(44, 74, 120, 0.08);
+  border-left: 4px solid rgba(44, 74, 120, 0.45);
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.92rem;
+}
+.feedback.visible {
+  display: flex;
+}
+.feedback.correct {
+  background: rgba(27, 138, 90, 0.12);
+  border-color: var(--correct);
+  color: #1d6b46;
+}
+.feedback.incorrect {
+  background: rgba(214, 69, 93, 0.12);
+  border-color: var(--incorrect);
+  color: #8f2f3d;
+}
+.feedback strong {
+  font-weight: 700;
+}
+.feedback .answer-line {
+  font-weight: 600;
+}
+.feedback .explanation-line {
+  color: #2a374f;
+}
+footer {
+  margin-top: 36px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #6b7891;
+}
+@media (max-width: 900px) {
+  body {
+    padding: 24px 16px 72px;
+  }
+  .question {
+    padding: 20px 18px;
+  }
+}
+@media (max-width: 600px) {
+  body {
+    padding: 20px 14px 64px;
+  }
+  header {
+    margin-bottom: 26px;
+  }
+  .q-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .options {
+    gap: 8px;
+  }
+  .options li {
+    padding: 10px 12px;
+  }
+  .action-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .action-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+@media (max-width: 420px) {
+  body {
+    padding: 18px 12px 56px;
+  }
+  .question {
+    padding: 18px 14px;
+    border-radius: 16px;
+  }
+  .options label {
+    font-size: 0.92rem;
+  }
+  textarea.answer-area {
+    font-size: 0.92rem;
+  }
+}
+</style>
+</head>
+<body>
+<h1>모의고사 3 - 탐색적 데이터 분석</h1>
+<section class='meta'>
+<p>탐색적 데이터 분석(EDA)과 피처 엔지니어링, 데이터 품질 점검에 초점을 맞춘 모의고사입니다.</p>
+<p>총 50문항 · 평균 난이도 1.84</p>
+</section>
+<h2>객관식 (30문항)</h2>
+<div class='question' id='q1'><div class='question-meta'><span>문제 1</span><span>객관식</span><span>난이도 1</span></div><p>소매 매출 이상 탐지 모델의 정확도를 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>53</td><td>14</td></tr><tr><th>실제 음성</th><td>9</td><td>48</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.81</li><li><strong>B.</strong> 0.76</li><li><strong>C.</strong> 0.86</li><li><strong>D.</strong> 0.71</li></ol></div>
+<div class='question' id='q2'><div class='question-meta'><span>문제 2</span><span>객관식</span><span>난이도 2</span></div><p>제휴사 쿠폰 사용 예측 모델의 정확도를 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>78</td><td>11</td></tr><tr><th>실제 음성</th><td>16</td><td>85</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.86</li><li><strong>B.</strong> 0.81</li><li><strong>C.</strong> 0.91</li><li><strong>D.</strong> 0.76</li></ol></div>
+<div class='question' id='q3'><div class='question-meta'><span>문제 3</span><span>객관식</span><span>난이도 2</span></div><p>IoT 센서 고장 감지 모델의 정확도를 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>114</td><td>22</td></tr><tr><th>실제 음성</th><td>33</td><td>165</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.84</li><li><strong>B.</strong> 0.79</li><li><strong>C.</strong> 0.89</li><li><strong>D.</strong> 0.74</li></ol></div>
+<div class='question' id='q4'><div class='question-meta'><span>문제 4</span><span>객관식</span><span>난이도 2</span></div><p>고객 만족도 조사 분류 모델의 정밀도를 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>46</td><td>13</td></tr><tr><th>실제 음성</th><td>16</td><td>49</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.74</li><li><strong>B.</strong> 0.79</li><li><strong>C.</strong> 0.69</li><li><strong>D.</strong> 0.84</li></ol></div>
+<div class='question' id='q5'><div class='question-meta'><span>문제 5</span><span>객관식</span><span>난이도 2</span></div><p>SNS 악성 댓글 판별 모델의 정밀도를 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>92</td><td>20</td></tr><tr><th>실제 음성</th><td>25</td><td>113</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.79</li><li><strong>B.</strong> 0.84</li><li><strong>C.</strong> 0.74</li><li><strong>D.</strong> 0.89</li></ol></div>
+<div class='question' id='q6'><div class='question-meta'><span>문제 6</span><span>객관식</span><span>난이도 1</span></div><p>문서 분류 시스템 모델의 정밀도를 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>68</td><td>18</td></tr><tr><th>실제 음성</th><td>15</td><td>83</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.82</li><li><strong>B.</strong> 0.87</li><li><strong>C.</strong> 0.77</li><li><strong>D.</strong> 0.92</li></ol></div>
+<div class='question' id='q7'><div class='question-meta'><span>문제 7</span><span>객관식</span><span>난이도 2</span></div><p>감성 분석 모델 모델의 재현율을 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>68</td><td>16</td></tr><tr><th>실제 음성</th><td>22</td><td>98</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.81</li><li><strong>B.</strong> 0.86</li><li><strong>C.</strong> 0.76</li><li><strong>D.</strong> 0.91</li></ol></div>
+<div class='question' id='q8'><div class='question-meta'><span>문제 8</span><span>객관식</span><span>난이도 2</span></div><p>서비스 해지 예측 모델의 재현율을 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>84</td><td>25</td></tr><tr><th>실제 음성</th><td>21</td><td>120</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.77</li><li><strong>B.</strong> 0.82</li><li><strong>C.</strong> 0.72</li><li><strong>D.</strong> 0.87</li></ol></div>
+<div class='question' id='q9'><div class='question-meta'><span>문제 9</span><span>객관식</span><span>난이도 2</span></div><p>제품 불량 품질 검사 모델의 재현율을 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>60</td><td>26</td></tr><tr><th>실제 음성</th><td>14</td><td>142</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.70</li><li><strong>B.</strong> 0.75</li><li><strong>C.</strong> 0.65</li><li><strong>D.</strong> 0.80</li></ol></div>
+<div class='question' id='q10'><div class='question-meta'><span>문제 10</span><span>객관식</span><span>난이도 2</span></div><p>응급실 선별 모델 모델의 특이도를 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>53</td><td>14</td></tr><tr><th>실제 음성</th><td>9</td><td>48</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.84</li><li><strong>B.</strong> 0.89</li><li><strong>C.</strong> 0.79</li><li><strong>D.</strong> 0.94</li></ol></div>
+<div class='question' id='q11'><div class='question-meta'><span>문제 11</span><span>객관식</span><span>난이도 2</span></div><p>사용자 리뷰 감성 분류 모델의 정밀도 0.82, 재현율 0.65일 때 F1-score를 소수 둘째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 0.73</li><li><strong>B.</strong> 0.79</li><li><strong>C.</strong> 0.67</li><li><strong>D.</strong> 0.83</li></ol><div class='note'>소수 둘째 자리까지 반올림하세요.</div></div>
+<div class='question' id='q12'><div class='question-meta'><span>문제 12</span><span>객관식</span><span>난이도 1</span></div><p>VIP 고객 이탈 위험 모델의 정밀도 0.76, 재현율 0.61일 때 F1-score를 소수 둘째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 0.68</li><li><strong>B.</strong> 0.74</li><li><strong>C.</strong> 0.62</li><li><strong>D.</strong> 0.78</li></ol><div class='note'>소수 둘째 자리까지 반올림하세요.</div></div>
+<div class='question' id='q13'><div class='question-meta'><span>문제 13</span><span>객관식</span><span>난이도 1</span></div><p>사기 거래 감시 모델의 정밀도 0.70, 재현율 0.74일 때 F1-score를 소수 둘째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 0.72</li><li><strong>B.</strong> 0.78</li><li><strong>C.</strong> 0.66</li><li><strong>D.</strong> 0.82</li></ol><div class='note'>소수 둘째 자리까지 반올림하세요.</div></div>
+<div class='question' id='q14'><div class='question-meta'><span>문제 14</span><span>객관식</span><span>난이도 2</span></div><p>구간별 매장 성과 분류 분할의 엔트로피를 소수 둘째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 0.91</li><li><strong>B.</strong> 1.03</li><li><strong>C.</strong> 0.79</li><li><strong>D.</strong> 1.11</li></ol></div>
+<div class='question' id='q15'><div class='question-meta'><span>문제 15</span><span>객관식</span><span>난이도 2</span></div><p>채무 불이행 위험 평가 분할의 엔트로피를 소수 둘째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 1.00</li><li><strong>B.</strong> 1.12</li><li><strong>C.</strong> 0.88</li><li><strong>D.</strong> 1.20</li></ol></div>
+<div class='question' id='q16'><div class='question-meta'><span>문제 16</span><span>객관식</span><span>난이도 1</span></div><p>설문 응답 그룹 분석 분할의 지니(Gini) 불순도를 소수 둘째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 0.46</li><li><strong>B.</strong> 0.56</li><li><strong>C.</strong> 0.36</li><li><strong>D.</strong> 0.64</li></ol></div>
+<div class='question' id='q17'><div class='question-meta'><span>문제 17</span><span>객관식</span><span>난이도 2</span></div><p>재고 이상 탐지 분할의 지니(Gini) 불순도를 소수 둘째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 0.45</li><li><strong>B.</strong> 0.55</li><li><strong>C.</strong> 0.35</li><li><strong>D.</strong> 0.63</li></ol></div>
+<div class='question' id='q18'><div class='question-meta'><span>문제 18</span><span>객관식</span><span>난이도 2</span></div><p>배치 경사 하강법 조정 모델에서 다음 스텝의 가중치를 소수 셋째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 1.174</li><li><strong>B.</strong> 1.324</li><li><strong>C.</strong> 1.024</li><li><strong>D.</strong> 1.424</li></ol><div class='note'>소수 셋째 자리까지 반올림하세요.</div></div>
+<div class='question' id='q19'><div class='question-meta'><span>문제 19</span><span>객관식</span><span>난이도 2</span></div><p>모멘텀 기반 업데이트 모델에서 다음 스텝의 가중치를 소수 셋째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> -0.527</li><li><strong>B.</strong> -0.377</li><li><strong>C.</strong> -0.677</li><li><strong>D.</strong> -0.277</li></ol><div class='note'>소수 셋째 자리까지 반올림하세요.</div></div>
+<div class='question' id='q20'><div class='question-meta'><span>문제 20</span><span>객관식</span><span>난이도 2</span></div><p>신규 상품 구매 확률 로지스틱 회귀에서 z=0.80일 때 양성 확률을 소수 둘째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 0.69</li><li><strong>B.</strong> 0.76</li><li><strong>C.</strong> 0.62</li><li><strong>D.</strong> 0.81</li></ol></div>
+<div class='question' id='q21'><div class='question-meta'><span>문제 21</span><span>객관식</span><span>난이도 1</span></div><p>산점도 행렬(Pairplot)을 통해 가장 쉽게 확인할 수 있는 정보는 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 변수 간 관계와 분포</li><li><strong>B.</strong> 시간에 따른 추세</li><li><strong>C.</strong> 모델 손실 감소</li><li><strong>D.</strong> 하이퍼파라미터 중요도</li></ol></div>
+<div class='question' id='q22'><div class='question-meta'><span>문제 22</span><span>객관식</span><span>난이도 1</span></div><p>범주형 변수의 비율을 비교하기에 가장 적절한 시각화는 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 선 그래프</li><li><strong>B.</strong> 막대그래프</li><li><strong>C.</strong> 산점도</li><li><strong>D.</strong> 히트맵</li></ol></div>
+<div class='question' id='q23'><div class='question-meta'><span>문제 23</span><span>객관식</span><span>난이도 1</span></div><p>수치형 변수의 분포와 이상치를 동시에 파악할 수 있는 대표적인 도구는 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 박스플롯</li><li><strong>B.</strong> 워드클라우드</li><li><strong>C.</strong> 파이차트</li><li><strong>D.</strong> 네트워크 그래프</li></ol></div>
+<div class='question' id='q24'><div class='question-meta'><span>문제 24</span><span>객관식</span><span>난이도 2</span></div><p>결측치가 변수 간 어떤 패턴으로 나타나는지를 확인하기 위해 가장 먼저 수행하면 좋은 작업은 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 결측치 히트맵이나 패턴 분석</li><li><strong>B.</strong> 하이퍼파라미터 튜닝</li><li><strong>C.</strong> 모델 앙상블</li><li><strong>D.</strong> 손실 함수 변경</li></ol></div>
+<div class='question' id='q25'><div class='question-meta'><span>문제 25</span><span>객관식</span><span>난이도 2</span></div><p>상관계수가 매우 높은 두 변수를 그대로 회귀 모델에 넣었을 때 주로 발생할 수 있는 문제는 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 학습률 증가</li><li><strong>B.</strong> 회귀계수 불안정</li><li><strong>C.</strong> 데이터 누수</li><li><strong>D.</strong> 즉시 과적합</li></ol></div>
+<div class='question' id='q26'><div class='question-meta'><span>문제 26</span><span>객관식</span><span>난이도 2</span></div><p>수치형 변수의 왜도가 크게 오른쪽으로 치우쳐 있을 때 흔히 적용하는 전처리는 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 로그 또는 루트 변환</li><li><strong>B.</strong> 원-핫 인코딩</li><li><strong>C.</strong> 차원 축소</li><li><strong>D.</strong> 배치 정규화</li></ol></div>
+<div class='question' id='q27'><div class='question-meta'><span>문제 27</span><span>객관식</span><span>난이도 2</span></div><p>EDA 단계에서 파생 변수를 생성하는 주요 목적은 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 모델 복잡도 증가</li><li><strong>B.</strong> 데이터의 양 감소</li><li><strong>C.</strong> 중요한 관계를 드러내고 설명력을 높인다</li><li><strong>D.</strong> 정규화를 수행하지 않아도 된다</li></ol></div>
+<div class='question' id='q28'><div class='question-meta'><span>문제 28</span><span>객관식</span><span>난이도 2</span></div><p>시간 순서가 있는 데이터를 EDA할 때 추세와 계절성을 동시에 확인하기 좋은 방법은 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 누적 막대그래프</li><li><strong>B.</strong> 시계열 분해 그래프</li><li><strong>C.</strong> 산점도 행렬</li><li><strong>D.</strong> K-Means 군집 결과</li></ol></div>
+<div class='question' id='q29'><div class='question-meta'><span>문제 29</span><span>객관식</span><span>난이도 2</span></div><p>EDA 과정에서 데이터 누수(Data Leakage)를 방지하기 위한 올바른 절차는 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 훈련/검증 데이터를 분리한 뒤 전처리를 적용한다</li><li><strong>B.</strong> 전체 데이터를 한 번에 정규화한다</li><li><strong>C.</strong> 하이퍼파라미터를 먼저 최적화한다</li><li><strong>D.</strong> 모델을 여러 개 앙상블한다</li></ol></div>
+<div class='question' id='q30'><div class='question-meta'><span>문제 30</span><span>객관식</span><span>난이도 2</span></div><p>주성분분석(PCA)을 적용하기 전에 선행해야 하는 작업으로 가장 중요한 것은 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 특징 스케일을 정규화하거나 표준화한다</li><li><strong>B.</strong> 드롭아웃 비율을 조정한다</li><li><strong>C.</strong> 교차 검증 폴드를 선택한다</li><li><strong>D.</strong> 배치 크기를 늘린다</li></ol></div>
+<h2>단답형 (15문항)</h2>
+<div class='question' id='q31'><div class='question-meta'><span>문제 31</span><span>단답형</span><span>난이도 2</span></div><p>정밀도 0.68, 재현율 0.71인 모델의 F1-score를 소수 둘째 자리까지 작성하세요.</p><div class='answer-line'></div><div class='note'>소수 둘째 자리까지 반올림하세요.</div></div>
+<div class='question' id='q32'><div class='question-meta'><span>문제 32</span><span>단답형</span><span>난이도 2</span></div><p>가중치 1.200, 학습률 0.056, 기울기 0.432일 때 다음 스텝 가중치를 소수 셋째 자리까지 작성하세요.</p><div class='answer-line'></div><div class='note'>소수 셋째 자리까지 반올림하세요.</div></div>
+<div class='question' id='q33'><div class='question-meta'><span>문제 33</span><span>단답형</span><span>난이도 1</span></div><p>값 8.80를 [4.80, 10.80] 범위로 Min-Max 정규화한 값을 소수 둘째 자리까지 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q34'><div class='question-meta'><span>문제 34</span><span>단답형</span><span>난이도 1</span></div><p>원본 12차원을 4차원으로 축소했을 때 제거된 차원의 수를 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q35'><div class='question-meta'><span>문제 35</span><span>단답형</span><span>난이도 1</span></div><p>10-fold 교차검증에서 훈련에 사용되는 폴드 개수를 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q36'><div class='question-meta'><span>문제 36</span><span>단답형</span><span>난이도 2</span></div><p>z = 0.70일 때 시그모이드 확률을 소수 둘째 자리까지 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q37'><div class='question-meta'><span>문제 37</span><span>단답형</span><span>난이도 2</span></div><p>TP=38, FP=10일 때 정밀도를 소수 둘째 자리까지 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q38'><div class='question-meta'><span>문제 38</span><span>단답형</span><span>난이도 2</span></div><p>샘플 수 660개에서 부트스트랩 시 특정 샘플이 선택되지 않을 확률을 소수 둘째 자리까지 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q39'><div class='question-meta'><span>문제 39</span><span>단답형</span><span>난이도 1</span></div><p>정확도 89.0%로 400개를 분류했을 때 올바르게 분류한 샘플 수를 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q40'><div class='question-meta'><span>문제 40</span><span>단답형</span><span>난이도 2</span></div><p>λ=0.110, 가중치 [3.0, 4.0]일 때 L2 패널티 값을 소수 둘째 자리까지 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q41'><div class='question-meta'><span>문제 41</span><span>단답형</span><span>난이도 2</span></div><p>예측값 [5, 7, 4]와 실제값 [4, 9, 4]의 MAE를 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q42'><div class='question-meta'><span>문제 42</span><span>단답형</span><span>난이도 2</span></div><p>값 [6, 8, 10, 12]의 모집단 분산을 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q43'><div class='question-meta'><span>문제 43</span><span>단답형</span><span>난이도 2</span></div><p>양성 30개, 음성 90개의 엔트로피를 소수 둘째 자리까지 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q44'><div class='question-meta'><span>문제 44</span><span>단답형</span><span>난이도 1</span></div><p>k=5인 KNN에서 양성 투표가 3표일 때 최종 분류를 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q45'><div class='question-meta'><span>문제 45</span><span>단답형</span><span>난이도 2</span></div><p>평균 52.0, 표준편차 4.0에서 값 60.4의 Z-score를 소수 둘째 자리까지 작성하세요.</p><div class='answer-line'></div></div>
+<h2>서답형 (5문항)</h2>
+<div class='question' id='q46'><div class='question-meta'><span>문제 46</span><span>서답형</span><span>난이도 3</span></div><p>새로운 데이터셋을 접했을 때 수행할 EDA 계획을 단계별로 작성하시오.</p><div class='essay-area'></div></div>
+<div class='question' id='q47'><div class='question-meta'><span>문제 47</span><span>서답형</span><span>난이도 3</span></div><p>다중공선성을 진단하고 해결하기 위한 방법을 설명하시오.</p><div class='essay-area'></div></div>
+<div class='question' id='q48'><div class='question-meta'><span>문제 48</span><span>서답형</span><span>난이도 3</span></div><p>데이터 시각화를 선택할 때 고려해야 할 요소와 예시를 제시하시오.</p><div class='essay-area'></div></div>
+<div class='question' id='q49'><div class='question-meta'><span>문제 49</span><span>서답형</span><span>난이도 3</span></div><p>데이터 품질을 평가할 때 확인해야 할 체크리스트를 작성하시오.</p><div class='essay-area'></div></div>
+<div class='question' id='q50'><div class='question-meta'><span>문제 50</span><span>서답형</span><span>난이도 3</span></div><p>EDA 결과로부터 파생변수나 추가 분석 아이디어를 도출하는 방법을 설명하시오.</p><div class='essay-area'></div></div>
+<script>
+  window.EXAM_ANSWER_DATA = {
+  "1": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "정확도 = (TP+TN)/전체 = (53+48)/124 = 0.81"
+  },
+  "2": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "정확도 = (TP+TN)/전체 = (78+85)/190 = 0.86"
+  },
+  "3": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "정확도 = (TP+TN)/전체 = (114+165)/334 = 0.84"
+  },
+  "4": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "정밀도 = TP/(TP+FP) = 0.74"
+  },
+  "5": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "정밀도 = TP/(TP+FP) = 0.79"
+  },
+  "6": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "정밀도 = TP/(TP+FP) = 0.82"
+  },
+  "7": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "재현율 = TP/(TP+FN) = 0.81"
+  },
+  "8": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "재현율 = TP/(TP+FN) = 0.77"
+  },
+  "9": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "재현율 = TP/(TP+FN) = 0.70"
+  },
+  "10": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "특이도 = TN/(TN+FP) = 0.84"
+  },
+  "11": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "F1 = 2·P·R/(P+R) = 0.73"
+  },
+  "12": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "F1 = 2·P·R/(P+R) = 0.68"
+  },
+  "13": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "F1 = 2·P·R/(P+R) = 0.72"
+  },
+  "14": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "엔트로피 = -Σp log2 p = 0.91"
+  },
+  "15": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "엔트로피 = -Σp log2 p = 1.00"
+  },
+  "16": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "지니 불순도 = 1 - Σp^2 = 0.46"
+  },
+  "17": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "지니 불순도 = 1 - Σp^2 = 0.45"
+  },
+  "18": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "새 가중치 = 1.200 - 0.058×0.440 = 1.174"
+  },
+  "19": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "새 가중치 = -0.550 - 0.012×-1.980 = -0.527"
+  },
+  "20": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "σ(z) = 1/(1+e^-z) = 0.69"
+  },
+  "21": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "Pairplot은 변수 쌍의 산점도와 대각선상의 분포를 통해 관계를 파악할 수 있다."
+  },
+  "22": {
+    "type": "객관식",
+    "answer": "B",
+    "explanation": "막대그래프는 범주별 빈도나 비율 비교에 적합하다."
+  },
+  "23": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "박스플롯은 사분위수와 이상치를 한눈에 보여준다."
+  },
+  "24": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "결측치 히트맵 등을 통해 어느 변수에 결측이 집중되는지 파악할 수 있다."
+  },
+  "25": {
+    "type": "객관식",
+    "answer": "B",
+    "explanation": "높은 상관을 가진 변수는 다중공선성을 유발해 계수 추정이 불안정해진다."
+  },
+  "26": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "로그/루트 변환은 오른쪽으로 긴 꼬리를 완화하는 데 도움이 된다."
+  },
+  "27": {
+    "type": "객관식",
+    "answer": "C",
+    "explanation": "적절한 파생 변수는 모델의 예측력을 높이고 도메인 지식을 반영한다."
+  },
+  "28": {
+    "type": "객관식",
+    "answer": "B",
+    "explanation": "시계열 분해 그래프는 추세와 계절성을 분리해 보여준다."
+  },
+  "29": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "전처리를 포함한 모든 변환은 훈련 데이터 기준으로 학습하고 검증 데이터에 동일하게 적용해야 한다."
+  },
+  "30": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "PCA는 공분산 기반 기법이라 스케일이 다른 변수는 반드시 정규화/표준화해야 한다."
+  },
+  "31": {
+    "type": "단답형",
+    "answer": "0.69",
+    "explanation": "F1 = 2PR/(P+R) = 0.69"
+  },
+  "32": {
+    "type": "단답형",
+    "answer": "1.176",
+    "explanation": "새 가중치 = 1.176"
+  },
+  "33": {
+    "type": "단답형",
+    "answer": "0.67",
+    "explanation": "(x-min)/(max-min) = 0.67"
+  },
+  "34": {
+    "type": "단답형",
+    "answer": "8",
+    "explanation": "제거된 차원 수 = 8"
+  },
+  "35": {
+    "type": "단답형",
+    "answer": "9",
+    "explanation": "폴드 하나를 검증에 사용하므로 훈련 폴드는 9개입니다."
+  },
+  "36": {
+    "type": "단답형",
+    "answer": "0.67",
+    "explanation": "σ(z) = 0.67"
+  },
+  "37": {
+    "type": "단답형",
+    "answer": "0.79",
+    "explanation": "정밀도 = 0.79"
+  },
+  "38": {
+    "type": "단답형",
+    "answer": "0.37",
+    "explanation": "(1-1/n)^n ≈ 0.37"
+  },
+  "39": {
+    "type": "단답형",
+    "answer": "356",
+    "explanation": "정확 분류 수 = 356"
+  },
+  "40": {
+    "type": "단답형",
+    "answer": "2.75",
+    "explanation": "λ·Σw^2 = 2.75"
+  },
+  "41": {
+    "type": "단답형",
+    "answer": "1.00",
+    "explanation": "MAE = 1.00"
+  },
+  "42": {
+    "type": "단답형",
+    "answer": "5.00",
+    "explanation": "모집단 분산 = 5.00"
+  },
+  "43": {
+    "type": "단답형",
+    "answer": "0.81",
+    "explanation": "엔트로피 = 0.81"
+  },
+  "44": {
+    "type": "단답형",
+    "answer": "양성",
+    "explanation": "양성 득표수가 3이므로 결과는 양성입니다."
+  },
+  "45": {
+    "type": "단답형",
+    "answer": "2.10",
+    "explanation": "Z = (x-μ)/σ = 2.10"
+  },
+  "46": {
+    "type": "서답형",
+    "answer": "서술형",
+    "explanation": "데이터 구조 파악, 결측·이상치 탐지, 기초 통계, 변수 간 관계 분석, 시각화 계획을 순차적으로 기술한다."
+  },
+  "47": {
+    "type": "서답형",
+    "answer": "서술형",
+    "explanation": "상관행렬, VIF 등의 진단 도구를 언급하고 변수 제거, 차원 축소, 정규화 회귀 등 해결책을 제시한다."
+  },
+  "48": {
+    "type": "서답형",
+    "answer": "서술형",
+    "explanation": "변수 유형, 전달 목적, 대상자 수준 등을 고려해야 함을 설명하고 적절한 시각화 예시를 매칭한다."
+  },
+  "49": {
+    "type": "서답형",
+    "answer": "서술형",
+    "explanation": "결측률, 이상치, 중복, 일관성, 최신성 등을 점검해야 함을 정리한다."
+  },
+  "50": {
+    "type": "서답형",
+    "answer": "서술형",
+    "explanation": "EDA에서 발견한 패턴을 기반으로 파생변수를 설계하고 가설을 세우는 방법을 기술한다."
+  }
+};
+</script>
+<script src="../exam-interactive.js"></script>
+</body>
+</html>

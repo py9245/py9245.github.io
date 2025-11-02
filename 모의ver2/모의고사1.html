@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang='ko'>
+<head>
+<meta charset='utf-8'>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>모의고사 1 - 머신러닝 기초</title>
+<style>
+:root {
+  --accent: #2c4a78;
+  --correct: #1b8a5a;
+  --incorrect: #d6455d;
+  --card-bg: #ffffff;
+  --card-shadow: 0 4px 18px rgba(18, 42, 88, 0.12);
+  --card-shadow-strong: 0 6px 22px rgba(18, 42, 88, 0.18);
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+body {
+  font-family: "Segoe UI", "Nanum Gothic", "Apple SD Gothic Neo", sans-serif;
+  margin: 0 auto;
+  max-width: 960px;
+  padding: 28px 18px 80px;
+  background: #f5f7fb;
+  color: #1f2d3d;
+  line-height: 1.65;
+}
+header {
+  text-align: center;
+  margin-bottom: 32px;
+  padding: 0 12px;
+}
+h1 {
+  margin: 0 0 8px;
+  font-size: clamp(1.6rem, 2.6vw + 1rem, 2.25rem);
+  color: #1a2945;
+}
+.info {
+  font-size: 0.95rem;
+  color: #4f5d78;
+  margin-bottom: 4px;
+}
+.question-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.question {
+  background: var(--card-bg);
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: var(--card-shadow);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.question.is-correct {
+  box-shadow: 0 10px 26px rgba(27, 138, 90, 0.22);
+}
+.question.is-incorrect {
+  box-shadow: 0 10px 26px rgba(214, 69, 93, 0.18);
+}
+.q-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: baseline;
+  margin-bottom: 14px;
+}
+.q-number {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--accent);
+}
+.q-tags {
+  font-size: 0.9rem;
+  color: #5d6f92;
+}
+.prompt {
+  margin-bottom: 16px;
+  word-break: keep-all;
+  white-space: pre-line;
+}
+.options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.options li {
+  background: #f7f9fc;
+  border-radius: 12px;
+  padding: 10px 12px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.options li:hover {
+  background: #eef3fb;
+  transform: translateY(-1px);
+}
+.options label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #1f2d3d;
+}
+.options input[type="radio"] {
+  accent-color: var(--accent);
+  transform: scale(1.1);
+}
+textarea.answer-area {
+  margin-top: 12px;
+  border: 1px solid #c5d1e3;
+  border-radius: 14px;
+  background: #ffffff;
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  color: #1f2d3d;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-height: 72px;
+  font-family: inherit;
+  resize: vertical;
+}
+textarea.answer-area.short {
+  min-height: 64px;
+}
+textarea.answer-area.descriptive {
+  min-height: 170px;
+}
+textarea.answer-area:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(44, 74, 120, 0.16);
+  outline: none;
+}
+.action-row {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.action-button {
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(44, 74, 120, 0.26);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.2s ease;
+}
+.action-button.secondary {
+  background: #62759c;
+}
+.action-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(44, 74, 120, 0.3);
+}
+.action-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(44, 74, 120, 0.22);
+}
+.feedback {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: rgba(44, 74, 120, 0.08);
+  border-left: 4px solid rgba(44, 74, 120, 0.45);
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.92rem;
+}
+.feedback.visible {
+  display: flex;
+}
+.feedback.correct {
+  background: rgba(27, 138, 90, 0.12);
+  border-color: var(--correct);
+  color: #1d6b46;
+}
+.feedback.incorrect {
+  background: rgba(214, 69, 93, 0.12);
+  border-color: var(--incorrect);
+  color: #8f2f3d;
+}
+.feedback strong {
+  font-weight: 700;
+}
+.feedback .answer-line {
+  font-weight: 600;
+}
+.feedback .explanation-line {
+  color: #2a374f;
+}
+footer {
+  margin-top: 36px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #6b7891;
+}
+@media (max-width: 900px) {
+  body {
+    padding: 24px 16px 72px;
+  }
+  .question {
+    padding: 20px 18px;
+  }
+}
+@media (max-width: 600px) {
+  body {
+    padding: 20px 14px 64px;
+  }
+  header {
+    margin-bottom: 26px;
+  }
+  .q-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .options {
+    gap: 8px;
+  }
+  .options li {
+    padding: 10px 12px;
+  }
+  .action-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .action-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+@media (max-width: 420px) {
+  body {
+    padding: 18px 12px 56px;
+  }
+  .question {
+    padding: 18px 14px;
+    border-radius: 16px;
+  }
+  .options label {
+    font-size: 0.92rem;
+  }
+  textarea.answer-area {
+    font-size: 0.92rem;
+  }
+}
+</style>
+</head>
+<body>
+<h1>모의고사 1 - 머신러닝 기초</h1>
+<section class='meta'>
+<p>지도학습과 분류·회귀 전반의 기초 개념을 점검하는 모의고사입니다. 기본 계산 문제와 핵심 개념을 고루 포함했습니다.</p>
+<p>총 50문항 · 평균 난이도 1.80</p>
+</section>
+<h2>객관식 (30문항)</h2>
+<div class='question' id='q1'><div class='question-meta'><span>문제 1</span><span>객관식</span><span>난이도 1</span></div><p>고객 이탈 예측 모델 모델의 정확도를 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>45</td><td>10</td></tr><tr><th>실제 음성</th><td>5</td><td>40</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.85</li><li><strong>B.</strong> 0.80</li><li><strong>C.</strong> 0.90</li><li><strong>D.</strong> 0.75</li></ol></div>
+<div class='question' id='q2'><div class='question-meta'><span>문제 2</span><span>객관식</span><span>난이도 2</span></div><p>의료 진단 보조 모델 모델의 정확도를 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>70</td><td>7</td></tr><tr><th>실제 음성</th><td>12</td><td>77</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.89</li><li><strong>B.</strong> 0.84</li><li><strong>C.</strong> 0.94</li><li><strong>D.</strong> 0.79</li></ol></div>
+<div class='question' id='q3'><div class='question-meta'><span>문제 3</span><span>객관식</span><span>난이도 2</span></div><p>신용카드 사기 탐지 모델 모델의 정확도를 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>106</td><td>18</td></tr><tr><th>실제 음성</th><td>29</td><td>157</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.85</li><li><strong>B.</strong> 0.80</li><li><strong>C.</strong> 0.90</li><li><strong>D.</strong> 0.75</li></ol></div>
+<div class='question' id='q4'><div class='question-meta'><span>문제 4</span><span>객관식</span><span>난이도 2</span></div><p>온라인 광고 클릭 예측 모델 모델의 정밀도를 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>38</td><td>9</td></tr><tr><th>실제 음성</th><td>12</td><td>41</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.76</li><li><strong>B.</strong> 0.81</li><li><strong>C.</strong> 0.71</li><li><strong>D.</strong> 0.86</li></ol></div>
+<div class='question' id='q5'><div class='question-meta'><span>문제 5</span><span>객관식</span><span>난이도 2</span></div><p>부정 리뷰 판별 모델 모델의 정밀도를 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>84</td><td>16</td></tr><tr><th>실제 음성</th><td>21</td><td>105</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.80</li><li><strong>B.</strong> 0.85</li><li><strong>C.</strong> 0.75</li><li><strong>D.</strong> 0.90</li></ol></div>
+<div class='question' id='q6'><div class='question-meta'><span>문제 6</span><span>객관식</span><span>난이도 1</span></div><p>스팸 메일 필터 모델의 정밀도를 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>60</td><td>14</td></tr><tr><th>실제 음성</th><td>11</td><td>75</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.85</li><li><strong>B.</strong> 0.90</li><li><strong>C.</strong> 0.80</li><li><strong>D.</strong> 0.95</li></ol></div>
+<div class='question' id='q7'><div class='question-meta'><span>문제 7</span><span>객관식</span><span>난이도 2</span></div><p>의료 영상 분류 모델 모델의 재현율을 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>60</td><td>12</td></tr><tr><th>실제 음성</th><td>18</td><td>90</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.83</li><li><strong>B.</strong> 0.88</li><li><strong>C.</strong> 0.78</li><li><strong>D.</strong> 0.93</li></ol></div>
+<div class='question' id='q8'><div class='question-meta'><span>문제 8</span><span>객관식</span><span>난이도 2</span></div><p>대출 연체 예측 모델 모델의 재현율을 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>76</td><td>21</td></tr><tr><th>실제 음성</th><td>17</td><td>112</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.78</li><li><strong>B.</strong> 0.83</li><li><strong>C.</strong> 0.73</li><li><strong>D.</strong> 0.88</li></ol></div>
+<div class='question' id='q9'><div class='question-meta'><span>문제 9</span><span>객관식</span><span>난이도 2</span></div><p>불량품 탐지 시스템 모델의 재현율을 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>52</td><td>22</td></tr><tr><th>실제 음성</th><td>10</td><td>134</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.70</li><li><strong>B.</strong> 0.75</li><li><strong>C.</strong> 0.65</li><li><strong>D.</strong> 0.80</li></ol></div>
+<div class='question' id='q10'><div class='question-meta'><span>문제 10</span><span>객관식</span><span>난이도 2</span></div><p>암 진단 모델 모델의 특이도를 소수 둘째 자리까지 구하시오.</p><table class="confusion"><tr><th></th><th>예측 양성</th><th>예측 음성</th></tr><tr><th>실제 양성</th><td>45</td><td>10</td></tr><tr><th>실제 음성</th><td>5</td><td>40</td></tr></table><ol class='options' type='A'><li><strong>A.</strong> 0.89</li><li><strong>B.</strong> 0.94</li><li><strong>C.</strong> 0.84</li><li><strong>D.</strong> 0.99</li></ol></div>
+<div class='question' id='q11'><div class='question-meta'><span>문제 11</span><span>객관식</span><span>난이도 2</span></div><p>이미지 분류 모델 모델의 정밀도 0.78, 재현율 0.62일 때 F1-score를 소수 둘째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 0.69</li><li><strong>B.</strong> 0.75</li><li><strong>C.</strong> 0.63</li><li><strong>D.</strong> 0.79</li></ol><div class='note'>소수 둘째 자리까지 반올림하세요.</div></div>
+<div class='question' id='q12'><div class='question-meta'><span>문제 12</span><span>객관식</span><span>난이도 1</span></div><p>대출 부도 예측 모델 모델의 정밀도 0.72, 재현율 0.58일 때 F1-score를 소수 둘째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 0.64</li><li><strong>B.</strong> 0.70</li><li><strong>C.</strong> 0.58</li><li><strong>D.</strong> 0.74</li></ol><div class='note'>소수 둘째 자리까지 반올림하세요.</div></div>
+<div class='question' id='q13'><div class='question-meta'><span>문제 13</span><span>객관식</span><span>난이도 1</span></div><p>추천 시스템 클릭 예측 모델의 정밀도 0.66, 재현율 0.71일 때 F1-score를 소수 둘째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 0.68</li><li><strong>B.</strong> 0.74</li><li><strong>C.</strong> 0.62</li><li><strong>D.</strong> 0.78</li></ol><div class='note'>소수 둘째 자리까지 반올림하세요.</div></div>
+<div class='question' id='q14'><div class='question-meta'><span>문제 14</span><span>객관식</span><span>난이도 2</span></div><p>고객 세그먼트 분할 분할의 엔트로피를 소수 둘째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 0.88</li><li><strong>B.</strong> 1.00</li><li><strong>C.</strong> 0.76</li><li><strong>D.</strong> 1.08</li></ol></div>
+<div class='question' id='q15'><div class='question-meta'><span>문제 15</span><span>객관식</span><span>난이도 2</span></div><p>회원 이탈 판단 분할의 엔트로피를 소수 둘째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 0.99</li><li><strong>B.</strong> 1.11</li><li><strong>C.</strong> 0.87</li><li><strong>D.</strong> 1.19</li></ol></div>
+<div class='question' id='q16'><div class='question-meta'><span>문제 16</span><span>객관식</span><span>난이도 1</span></div><p>설문 응답 만족도 분석 분할의 지니(Gini) 불순도를 소수 둘째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 0.46</li><li><strong>B.</strong> 0.56</li><li><strong>C.</strong> 0.35</li><li><strong>D.</strong> 0.64</li></ol></div>
+<div class='question' id='q17'><div class='question-meta'><span>문제 17</span><span>객관식</span><span>난이도 2</span></div><p>보험 청구 이상 탐지 분할의 지니(Gini) 불순도를 소수 둘째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 0.43</li><li><strong>B.</strong> 0.53</li><li><strong>C.</strong> 0.33</li><li><strong>D.</strong> 0.61</li></ol></div>
+<div class='question' id='q18'><div class='question-meta'><span>문제 18</span><span>객관식</span><span>난이도 2</span></div><p>선형 회귀 가중치 업데이트 모델에서 다음 스텝의 가중치를 소수 셋째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 0.940</li><li><strong>B.</strong> 1.090</li><li><strong>C.</strong> 0.790</li><li><strong>D.</strong> 1.190</li></ol><div class='note'>소수 셋째 자리까지 반올림하세요.</div></div>
+<div class='question' id='q19'><div class='question-meta'><span>문제 19</span><span>객관식</span><span>난이도 2</span></div><p>로지스틱 회귀 경사 업데이트 모델에서 다음 스텝의 가중치를 소수 셋째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> -0.772</li><li><strong>B.</strong> -0.622</li><li><strong>C.</strong> -0.922</li><li><strong>D.</strong> -0.522</li></ol><div class='note'>소수 셋째 자리까지 반올림하세요.</div></div>
+<div class='question' id='q20'><div class='question-meta'><span>문제 20</span><span>객관식</span><span>난이도 2</span></div><p>사용자 이탈 확률 추정 로지스틱 회귀에서 z=0.30일 때 양성 확률을 소수 둘째 자리까지 구하시오.</p><ol class='options' type='A'><li><strong>A.</strong> 0.57</li><li><strong>B.</strong> 0.64</li><li><strong>C.</strong> 0.50</li><li><strong>D.</strong> 0.69</li></ol></div>
+<div class='question' id='q21'><div class='question-meta'><span>문제 21</span><span>객관식</span><span>난이도 1</span></div><p>지도학습에서 모델이 관계를 학습하기 위해 필요한 데이터 구성은 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 정답 레이블이 없는 데이터만 제공되는 경우</li><li><strong>B.</strong> 입력 특징과 정답 레이블이 함께 제공되는 데이터</li><li><strong>C.</strong> 오로지 잡음이 제거된 데이터</li><li><strong>D.</strong> 동일한 값이 반복되는 데이터</li></ol></div>
+<div class='question' id='q22'><div class='question-meta'><span>문제 22</span><span>객관식</span><span>난이도 1</span></div><p>회귀(regression) 문제에서 일반적으로 사용하는 손실 함수 또는 평가 지표는 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 정확도(Accuracy)</li><li><strong>B.</strong> F1-Score</li><li><strong>C.</strong> 평균제곱오차(MSE)</li><li><strong>D.</strong> ROC-AUC</li></ol></div>
+<div class='question' id='q23'><div class='question-meta'><span>문제 23</span><span>객관식</span><span>난이도 2</span></div><p>훈련 데이터에 과도하게 적합된 모델이 새로운 데이터에서 보이는 대표적 문제는 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 과소적합(Underfitting)</li><li><strong>B.</strong> 과적합(Overfitting)</li><li><strong>C.</strong> 정규화(Normalization)</li><li><strong>D.</strong> 배깅(Bagging)</li></ol></div>
+<div class='question' id='q24'><div class='question-meta'><span>문제 24</span><span>객관식</span><span>난이도 2</span></div><p>배깅(Bagging) 기법의 핵심 아이디어는 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 서로 다른 모델을 직렬로 연결한다</li><li><strong>B.</strong> 동일한 데이터셋을 반복 학습한다</li><li><strong>C.</strong> 부트스트랩 샘플을 학습해 다수결로 예측을 결합한다</li><li><strong>D.</strong> 손실 함수를 변경해 모델을 수정한다</li></ol></div>
+<div class='question' id='q25'><div class='question-meta'><span>문제 25</span><span>객관식</span><span>난이도 1</span></div><p>로지스틱 회귀의 출력 확률 범위는 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> (-∞, ∞)</li><li><strong>B.</strong> [0, 1]</li><li><strong>C.</strong> [-1, 1]</li><li><strong>D.</strong> 정수 값만 가능하다</li></ol></div>
+<div class='question' id='q26'><div class='question-meta'><span>문제 26</span><span>객관식</span><span>난이도 2</span></div><p>학습률을 지나치게 크게 설정했을 때 주로 발생하는 문제는 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 항상 빠르게 전역 최적값에 수렴한다</li><li><strong>B.</strong> 최적점 주변에서 발산하거나 진동한다</li><li><strong>C.</strong> 과적합이 즉시 해결된다</li><li><strong>D.</strong> 데이터 정규화가 필요 없어진다</li></ol></div>
+<div class='question' id='q27'><div class='question-meta'><span>문제 27</span><span>객관식</span><span>난이도 2</span></div><p>L2 정규화에 대한 설명으로 옳은 것은 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 가중치 절대값의 합을 패널티로 추가한다</li><li><strong>B.</strong> 가중치 제곱합에 패널티를 부여한다</li><li><strong>C.</strong> 드롭아웃과 동일한 효과를 낸다</li><li><strong>D.</strong> 데이터 표준화를 수행한다</li></ol></div>
+<div class='question' id='q28'><div class='question-meta'><span>문제 28</span><span>객관식</span><span>난이도 1</span></div><p>K-최근접 이웃(KNN) 모델의 가장 중요한 하이퍼파라미터는 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 은닉층 개수</li><li><strong>B.</strong> 학습률</li><li><strong>C.</strong> 이웃의 수 k</li><li><strong>D.</strong> 배치 크기</li></ol></div>
+<div class='question' id='q29'><div class='question-meta'><span>문제 29</span><span>객관식</span><span>난이도 2</span></div><p>선형 SVM이 선형 분리 불가능한 데이터를 다루기 위해 주로 사용하는 기법은 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 드롭아웃</li><li><strong>B.</strong> 배치 정규화</li><li><strong>C.</strong> 커널 트릭</li><li><strong>D.</strong> 데이터 중복 생성</li></ol></div>
+<div class='question' id='q30'><div class='question-meta'><span>문제 30</span><span>객관식</span><span>난이도 1</span></div><p>교차 검증을 수행하는 주된 목적은 무엇인가?</p><ol class='options' type='A'><li><strong>A.</strong> 훈련 시간을 줄이기 위해서</li><li><strong>B.</strong> 모델의 일반화 성능을 안정적으로 추정하기 위해서</li><li><strong>C.</strong> 데이터 정규화를 대신하기 위해서</li><li><strong>D.</strong> 손실 함수를 변경하기 위해서</li></ol></div>
+<h2>단답형 (15문항)</h2>
+<div class='question' id='q31'><div class='question-meta'><span>문제 31</span><span>단답형</span><span>난이도 2</span></div><p>정밀도 0.80, 재현율 0.50인 모델의 F1-score를 소수 둘째 자리까지 작성하세요.</p><div class='answer-line'></div><div class='note'>소수 둘째 자리까지 반올림하세요.</div></div>
+<div class='question' id='q32'><div class='question-meta'><span>문제 32</span><span>단답형</span><span>난이도 2</span></div><p>가중치 1.000, 학습률 0.050, 기울기 0.400일 때 다음 스텝 가중치를 소수 셋째 자리까지 작성하세요.</p><div class='answer-line'></div><div class='note'>소수 셋째 자리까지 반올림하세요.</div></div>
+<div class='question' id='q33'><div class='question-meta'><span>문제 33</span><span>단답형</span><span>난이도 1</span></div><p>값 8.00를 [4.00, 10.00] 범위로 Min-Max 정규화한 값을 소수 둘째 자리까지 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q34'><div class='question-meta'><span>문제 34</span><span>단답형</span><span>난이도 1</span></div><p>원본 10차원을 4차원으로 축소했을 때 제거된 차원의 수를 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q35'><div class='question-meta'><span>문제 35</span><span>단답형</span><span>난이도 1</span></div><p>10-fold 교차검증에서 훈련에 사용되는 폴드 개수를 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q36'><div class='question-meta'><span>문제 36</span><span>단답형</span><span>난이도 2</span></div><p>z = 0.30일 때 시그모이드 확률을 소수 둘째 자리까지 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q37'><div class='question-meta'><span>문제 37</span><span>단답형</span><span>난이도 2</span></div><p>TP=45, FP=5일 때 정밀도를 소수 둘째 자리까지 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q38'><div class='question-meta'><span>문제 38</span><span>단답형</span><span>난이도 2</span></div><p>샘플 수 1000개에서 부트스트랩 시 특정 샘플이 선택되지 않을 확률을 소수 둘째 자리까지 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q39'><div class='question-meta'><span>문제 39</span><span>단답형</span><span>난이도 1</span></div><p>정확도 90.0%로 250개를 분류했을 때 올바르게 분류한 샘플 수를 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q40'><div class='question-meta'><span>문제 40</span><span>단답형</span><span>난이도 2</span></div><p>λ=0.100, 가중치 [3.0, 4.0]일 때 L2 패널티 값을 소수 둘째 자리까지 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q41'><div class='question-meta'><span>문제 41</span><span>단답형</span><span>난이도 2</span></div><p>예측값 [3, 5, 2]와 실제값 [2, 7, 2]의 MAE를 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q42'><div class='question-meta'><span>문제 42</span><span>단답형</span><span>난이도 2</span></div><p>값 [4, 6, 8, 10]의 모집단 분산을 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q43'><div class='question-meta'><span>문제 43</span><span>단답형</span><span>난이도 2</span></div><p>양성 20개, 음성 80개의 엔트로피를 소수 둘째 자리까지 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q44'><div class='question-meta'><span>문제 44</span><span>단답형</span><span>난이도 1</span></div><p>k=5인 KNN에서 양성 투표가 3표일 때 최종 분류를 작성하세요.</p><div class='answer-line'></div></div>
+<div class='question' id='q45'><div class='question-meta'><span>문제 45</span><span>단답형</span><span>난이도 2</span></div><p>평균 50.0, 표준편차 4.0에서 값 58.0의 Z-score를 소수 둘째 자리까지 작성하세요.</p><div class='answer-line'></div></div>
+<h2>서답형 (5문항)</h2>
+<div class='question' id='q46'><div class='question-meta'><span>문제 46</span><span>서답형</span><span>난이도 3</span></div><p>훈련과 검증 데이터에서 과적합을 조기에 감지하고 완화하기 위한 방법을 설명하시오. 최소 두 가지 이상의 전략을 제시하고 이유를 쓰시오.</p><div class='essay-area'></div></div>
+<div class='question' id='q47'><div class='question-meta'><span>문제 47</span><span>서답형</span><span>난이도 3</span></div><p>특징 스케일링이 필요한 이유와 Min-Max 정규화, Z-Score 표준화의 장단점을 비교하여 설명하시오.</p><div class='essay-area'></div></div>
+<div class='question' id='q48'><div class='question-meta'><span>문제 48</span><span>서답형</span><span>난이도 3</span></div><p>정형 데이터와 비정형 데이터의 차이를 설명하고, 각 데이터 유형에서 자주 사용하는 전처리 방법을 예시와 함께 제시하시오.</p><div class='essay-area'></div></div>
+<div class='question' id='q49'><div class='question-meta'><span>문제 49</span><span>서답형</span><span>난이도 3</span></div><p>앙상블 학습이 단일 모델 대비 갖는 장점과 실제 서비스에 적용할 때 고려해야 할 점을 설명하시오.</p><div class='essay-area'></div></div>
+<div class='question' id='q50'><div class='question-meta'><span>문제 50</span><span>서답형</span><span>난이도 3</span></div><p>머신러닝 프로젝트에서 데이터 준비부터 모델 평가까지의 표준 파이프라인을 단계별로 요약하고, 각 단계에서 주의할 점을 간단히 서술하시오.</p><div class='essay-area'></div></div>
+<script>
+  window.EXAM_ANSWER_DATA = {
+  "1": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "정확도 = (TP+TN)/전체 = (45+40)/100 = 0.85"
+  },
+  "2": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "정확도 = (TP+TN)/전체 = (70+77)/166 = 0.89"
+  },
+  "3": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "정확도 = (TP+TN)/전체 = (106+157)/310 = 0.85"
+  },
+  "4": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "정밀도 = TP/(TP+FP) = 0.76"
+  },
+  "5": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "정밀도 = TP/(TP+FP) = 0.80"
+  },
+  "6": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "정밀도 = TP/(TP+FP) = 0.85"
+  },
+  "7": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "재현율 = TP/(TP+FN) = 0.83"
+  },
+  "8": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "재현율 = TP/(TP+FN) = 0.78"
+  },
+  "9": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "재현율 = TP/(TP+FN) = 0.70"
+  },
+  "10": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "특이도 = TN/(TN+FP) = 0.89"
+  },
+  "11": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "F1 = 2·P·R/(P+R) = 0.69"
+  },
+  "12": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "F1 = 2·P·R/(P+R) = 0.64"
+  },
+  "13": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "F1 = 2·P·R/(P+R) = 0.68"
+  },
+  "14": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "엔트로피 = -Σp log2 p = 0.88"
+  },
+  "15": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "엔트로피 = -Σp log2 p = 0.99"
+  },
+  "16": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "지니 불순도 = 1 - Σp^2 = 0.45"
+  },
+  "17": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "지니 불순도 = 1 - Σp^2 = 0.43"
+  },
+  "18": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "새 가중치 = 0.960 - 0.050×0.400 = 0.940"
+  },
+  "19": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "새 가중치 = -0.790 - 0.010×-1.800 = -0.772"
+  },
+  "20": {
+    "type": "객관식",
+    "answer": "A",
+    "explanation": "σ(z) = 1/(1+e^-z) = 0.57"
+  },
+  "21": {
+    "type": "객관식",
+    "answer": "B",
+    "explanation": "지도학습은 입력과 정답 레이블 쌍을 사용해 목표 함수를 학습한다."
+  },
+  "22": {
+    "type": "객관식",
+    "answer": "C",
+    "explanation": "회귀 문제는 연속값 예측이므로 예측 오차의 제곱 평균 등을 활용한다."
+  },
+  "23": {
+    "type": "객관식",
+    "answer": "B",
+    "explanation": "과적합은 훈련 데이터에는 정확하지만 새로운 데이터에서는 오차가 커지는 현상이다."
+  },
+  "24": {
+    "type": "객관식",
+    "answer": "C",
+    "explanation": "배깅은 부트스트랩 샘플로 여러 기본 모델을 학습하고 다수결 또는 평균으로 결합한다."
+  },
+  "25": {
+    "type": "객관식",
+    "answer": "B",
+    "explanation": "시그모이드를 사용하므로 출력 확률은 0과 1 사이로 제한된다."
+  },
+  "26": {
+    "type": "객관식",
+    "answer": "B",
+    "explanation": "학습률이 너무 크면 기울기 업데이트가 과격해져 발산하거나 진동하기 쉽다."
+  },
+  "27": {
+    "type": "객관식",
+    "answer": "B",
+    "explanation": "L2 정규화는 가중치 제곱합을 손실에 더해 큰 가중치를 억제한다."
+  },
+  "28": {
+    "type": "객관식",
+    "answer": "C",
+    "explanation": "KNN은 이웃 수 k에 따라 결정 경계가 바뀌므로 핵심 하이퍼파라미터이다."
+  },
+  "29": {
+    "type": "객관식",
+    "answer": "C",
+    "explanation": "커널 트릭을 통해 고차원으로 매핑하면 선형 분리가 가능해진다."
+  },
+  "30": {
+    "type": "객관식",
+    "answer": "B",
+    "explanation": "교차 검증은 다양한 분할에 대해 검증 성능을 측정해 일반화 능력을 평가한다."
+  },
+  "31": {
+    "type": "단답형",
+    "answer": "0.62",
+    "explanation": "F1 = 2PR/(P+R) = 0.62"
+  },
+  "32": {
+    "type": "단답형",
+    "answer": "0.980",
+    "explanation": "새 가중치 = 0.980"
+  },
+  "33": {
+    "type": "단답형",
+    "answer": "0.67",
+    "explanation": "(x-min)/(max-min) = 0.67"
+  },
+  "34": {
+    "type": "단답형",
+    "answer": "6",
+    "explanation": "제거된 차원 수 = 6"
+  },
+  "35": {
+    "type": "단답형",
+    "answer": "9",
+    "explanation": "폴드 하나를 검증에 사용하므로 훈련 폴드는 9개입니다."
+  },
+  "36": {
+    "type": "단답형",
+    "answer": "0.57",
+    "explanation": "σ(z) = 0.57"
+  },
+  "37": {
+    "type": "단답형",
+    "answer": "0.90",
+    "explanation": "정밀도 = 0.90"
+  },
+  "38": {
+    "type": "단답형",
+    "answer": "0.37",
+    "explanation": "(1-1/n)^n ≈ 0.37"
+  },
+  "39": {
+    "type": "단답형",
+    "answer": "225",
+    "explanation": "정확 분류 수 = 225"
+  },
+  "40": {
+    "type": "단답형",
+    "answer": "2.50",
+    "explanation": "λ·Σw^2 = 2.50"
+  },
+  "41": {
+    "type": "단답형",
+    "answer": "1.00",
+    "explanation": "MAE = 1.00"
+  },
+  "42": {
+    "type": "단답형",
+    "answer": "5.00",
+    "explanation": "모집단 분산 = 5.00"
+  },
+  "43": {
+    "type": "단답형",
+    "answer": "0.72",
+    "explanation": "엔트로피 = 0.72"
+  },
+  "44": {
+    "type": "단답형",
+    "answer": "양성",
+    "explanation": "양성 득표수가 3이므로 결과는 양성입니다."
+  },
+  "45": {
+    "type": "단답형",
+    "answer": "2.00",
+    "explanation": "Z = (x-μ)/σ = 2.00"
+  },
+  "46": {
+    "type": "서답형",
+    "answer": "서술형",
+    "explanation": "훈련/검증 손실 곡선을 비교해 과적합을 감지하고, 조기 종료, 정규화(L1/L2), 드롭아웃, 데이터 증강 등의 전략을 근거와 함께 서술한다."
+  },
+  "47": {
+    "type": "서답형",
+    "answer": "서술형",
+    "explanation": "거리 기반 모델과 경사 하강법의 안정성을 위해 스케일링이 필요한 이유를 제시하고, 두 방식의 적용 시점과 장단점을 비교한다."
+  },
+  "48": {
+    "type": "서답형",
+    "answer": "서술형",
+    "explanation": "정형/비정형 데이터의 구조를 비교하고, 표준화·원핫인코딩·토큰화·데이터 증강 등 전처리 방법을 도메인 사례와 함께 기술한다."
+  },
+  "49": {
+    "type": "서답형",
+    "answer": "서술형",
+    "explanation": "배깅/부스팅을 통한 분산 감소와 성능 향상 장점을 쓰고, 추론 지연·리소스·운영 복잡성을 고려해야 함을 설명한다."
+  },
+  "50": {
+    "type": "서답형",
+    "answer": "서술형",
+    "explanation": "데이터 수집, 탐색, 전처리, 특징 엔지니어링, 모델 학습, 튜닝, 평가/배포까지 단계별 핵심 포인트를 정리한다."
+  }
+};
+</script>
+<script src="../exam-interactive.js"></script>
+</body>
+</html>
