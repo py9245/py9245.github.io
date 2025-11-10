@@ -248,7 +248,7 @@
 
       <section class="panel">
         <h2>대화 목록</h2>
-        <p class="panel-note">3초마다 자동으로 최신 메시지를 불러옵니다.</p>
+        <p class="panel-note">0.5초마다 자동으로 최신 메시지를 불러옵니다.</p>
         <p class="status-text" id="status-text">최근 대화 불러오는 중...</p>
         <div class="messages" id="chat-messages"></div>
         <p class="empty" id="empty-state" hidden>아직 대화가 없습니다. 첫 메시지를 남겨보세요!</p>
@@ -282,7 +282,7 @@
       ;(() => {
         const TOKEN_STORAGE_KEY = 'codex_auth_token'
         const CHAT_LIMIT = 80
-        const POLL_INTERVAL = 3000
+        const POLL_INTERVAL = 500
 
         const chatMessagesEl = document.getElementById('chat-messages')
         const emptyStateEl = document.getElementById('empty-state')
