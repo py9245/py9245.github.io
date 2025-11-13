@@ -639,23 +639,56 @@
 
         readToken()
         refreshState().then(() => {
-          startPolling()
-          startMessagePolling()
-        })
-      })()
-    </script>
-    <aside class="hi-sidebar">
-      <div class="hi-sidebar__badge">제작자</div>
-      <h3 class="hi-sidebar__title">"HI" 인사하기</h3>
-      <p class="hi-sidebar__text">서비스 제작자(py9245)에게 궁금한 점이나 응원 메시지를 바로 남겨보세요.</p>
-      <a
-        class="hi-sidebar__cta btn btn-success btn-sm"
-        href="https://meeting.ssafy.com/s14public/messages/@py9245"
-        target="_blank"
-        rel="noopener"
-      >
-        메세지 보내기
-      </a>
+        startPolling()
+        startMessagePolling()
+      })
+    })()
+
+    ;(() => {
+      const sidebar = document.querySelector('[data-sidebar]')
+      const toggleButton = document.querySelector('[data-sidebar-toggle]')
+      const content = sidebar?.querySelector('.hi-sidebar__content')
+      if (!sidebar || !toggleButton || !content) return
+
+      const MOBILE_WIDTH = 992
+
+      const applyState = () => {
+        const isMobile = window.innerWidth < MOBILE_WIDTH
+        if (!isMobile) {
+          sidebar.classList.remove('hi-sidebar--closed')
+          toggleButton.textContent = '닫기'
+          content.hidden = false
+          return
+        }
+        const isClosed = sidebar.classList.contains('hi-sidebar--closed')
+        content.hidden = isClosed
+        toggleButton.textContent = isClosed ? '"HI" 인사하기' : '닫기'
+      }
+
+      toggleButton.addEventListener('click', () => {
+        sidebar.classList.toggle('hi-sidebar--closed')
+        applyState()
+      })
+
+      window.addEventListener('resize', applyState)
+      applyState()
+    })()
+  </script>
+  <aside class="hi-sidebar" data-sidebar>
+      <button class="hi-sidebar__toggle btn btn-outline-secondary btn-sm" type="button" data-sidebar-toggle>닫기</button>
+      <div class="hi-sidebar__content">
+        <div class="hi-sidebar__badge">제작자</div>
+        <h3 class="hi-sidebar__title">"HI" 인사하기</h3>
+        <p class="hi-sidebar__text">서비스 제작자(py9245)에게 궁금한 점이나 응원 메시지를 바로 남겨보세요.</p>
+        <a
+          class="hi-sidebar__cta btn btn-success btn-sm"
+          href="https://meeting.ssafy.com/s14public/messages/@py9245"
+          target="_blank"
+          rel="noopener"
+        >
+          메세지 보내기
+        </a>
+      </div>
     </aside>
   </body>
 </html>
