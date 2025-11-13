@@ -252,8 +252,18 @@
         const TOKEN_KEY = 'codex_auth_token'
         const PHONE_PATTERN = /010-\d{4}-\d{4}/
         const STATE_LIMIT = 60
-        const STATE_ENDPOINT = `/api/random-chat/state?limit=${STATE_LIMIT}`
-        const MESSAGE_ENDPOINT = `/api/random-chat/messages?limit=${STATE_LIMIT}`
+        const determineApiBase = () => {
+          if (window.API_BASE_URL) return window.API_BASE_URL
+          const host = window.location.hostname || ''
+          if (host.endsWith('github.io')) {
+            return 'https://15-164-232-40.nip.io/api'
+          }
+          if (window.location.origin) {
+            return `${window.location.origin}/api`
+          }
+          return '/api'
+        }
+        const API_BASE_URL = determineApiBase().replace(/\/$/, '')
 
         const queueSizeEl = document.getElementById('queue-size')
         const activeSessionsEl = document.getElementById('active-sessions')
@@ -330,6 +340,7 @@
         }
 
         const updateUI = (payload) => {
+          const previousSessionId = currentSessionId
           const {
             queue_size = 0,
             active_sessions = 0,
@@ -346,11 +357,9 @@
             currentStatusEl.textContent = `${session.partner_alias} 연결됨`
             messageInputEl.disabled = false
             sendBtnEl.disabled = false
-            matchNoticeEl.hidden = currentSessionId === session.id
-            if (currentSessionId !== session.id) {
-              matchNoticeEl.hidden = false
-            }
+            const isNewSession = session.id !== previousSessionId
             currentSessionId = session.id
+            matchNoticeEl.hidden = !isNewSession
           } else if (in_queue) {
             currentStatusEl.textContent = '대기열에서 상대를 기다리는 중'
             messageInputEl.disabled = true
@@ -373,10 +382,16 @@
           } else {
             renderMessages([])
           }
+          startMessagePolling()
+        }
+
+        const buildApiUrl = (path) => {
+          const normalized = path.startsWith('/') ? path : `/${path}`
+          return `${API_BASE_URL}${normalized}`
         }
 
         const request = async (path, options = {}) => {
-          const response = await fetch(path, {
+          const response = await fetch(buildApiUrl(path), {
             ...options,
             headers: {
               ...authHeaders(),
@@ -412,9 +427,10 @@
             return
           }
           try {
-            const payload = await request(STATE_ENDPOINT)
+            const payload = await request(`/random-chat/state?limit=${STATE_LIMIT}`)
             setAlert(stateAlertEl, '')
             updateUI(payload)
+            startMessagePolling()
           } catch (error) {
             setAlert(stateAlertEl, error.message, error.status === 404 ? 'warning' : 'danger')
           }
@@ -423,7 +439,7 @@
         const refreshMessages = async () => {
           if (!token || !currentSessionId) return
           try {
-            const payload = await request(MESSAGE_ENDPOINT)
+            const payload = await request(`/random-chat/messages?limit=${STATE_LIMIT}`)
             renderMessages(payload?.messages, '상대방')
           } catch (error) {
             console.error(error)
@@ -448,7 +464,7 @@
           }
           joinBtn.disabled = true
           try {
-            const payload = await request('/api/random-chat/queue', { method: 'POST' })
+            const payload = await request('/random-chat/queue', { method: 'POST' })
             updateUI(payload)
           } catch (error) {
             setAlert(stateAlertEl, error.message)
@@ -461,7 +477,7 @@
         leaveBtn.addEventListener('click', async () => {
           leaveBtn.disabled = true
           try {
-            await request('/api/random-chat/queue', { method: 'DELETE' })
+            await request('/random-chat/queue', { method: 'DELETE' })
             await refreshState()
           } catch (error) {
             setAlert(stateAlertEl, error.message)
@@ -473,7 +489,7 @@
         matchBtn.addEventListener('click', async () => {
           matchBtn.disabled = true
           try {
-            const payload = await request('/api/random-chat/match', { method: 'POST' })
+            const payload = await request('/random-chat/match', { method: 'POST' })
             updateUI(payload)
             startMessagePolling()
           } catch (error) {
@@ -511,7 +527,7 @@
           }
           sendBtnEl.disabled = true
           try {
-            await request('/api/random-chat/messages', {
+            await request('/random-chat/messages', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ content }),
