@@ -159,6 +159,48 @@
       .hidden {
         display: none;
       }
+
+      @media (max-width: 640px) {
+        body {
+          padding: 0.75rem;
+        }
+
+        main {
+          padding: 1.25rem;
+          border-radius: 0.75rem;
+        }
+
+        h1 {
+          font-size: 1.4rem;
+        }
+
+        .question-title {
+          font-size: 1.05rem;
+        }
+
+        label {
+          flex-direction: column;
+          gap: 0.35rem;
+          font-size: 0.95rem;
+        }
+
+        pre {
+          font-size: 0.8rem;
+        }
+
+        .actions {
+          flex-direction: column;
+        }
+
+        button {
+          width: 100%;
+        }
+
+        .scoreboard {
+          flex-direction: column;
+          gap: 0.35rem;
+        }
+      }
     </style>
   </head>
   <body>
