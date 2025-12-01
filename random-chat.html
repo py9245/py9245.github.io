@@ -562,9 +562,17 @@
       const PHONE_PATTERN = /010-\d{4}-\d{4}/
 
       const determineBackendOrigin = () => {
-        if (window.API_BASE_URL) {
+        const storedBase = (() => {
           try {
-            return new URL(window.API_BASE_URL, window.location.origin).origin
+            return localStorage.getItem('API_BASE_URL') || null
+          } catch {
+            return null
+          }
+        })()
+        const runtimeBase = window.API_BASE_URL || storedBase || null
+        if (runtimeBase) {
+          try {
+            return new URL(runtimeBase, window.location.origin).origin
           } catch {
             // fall through
           }
